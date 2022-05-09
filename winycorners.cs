@@ -1,5 +1,14 @@
-// Search your C# compiler with `cd C:/ %% dir /S /B csc.exe`
-// Compile with: C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe /r:"C:\Windows\Microsoft.NET\Framework64\v4.0.30319\WPF\WindowsBase.dll" /t:winexe /out:winycorners.exe winycorners.cs
+/*
+WinYcorners
+
+Sets a hot-corner that shows the Task View on mouse hover.
+This tool wants to imitate the hot corners of Gnome Desktop 40+.
+
+Created by Luca Reggiannini. Original repo: https://github.com/LucaReggiannini/winycorners
+
+Search your C# compiler with `cd C:/ %% dir /S /B csc.exe`
+Compile & run with: cls && C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe /r:"C:\Windows\Microsoft.NET\Framework64\v4.0.30319\WPF\WindowsBase.dll" /t:winexe /out:winycorners.exe winycorners.cs %% winycorners.exe --top-left
+*/
 
 using System;                         // Tuples
 using System.Windows;                 // Rect, Point
