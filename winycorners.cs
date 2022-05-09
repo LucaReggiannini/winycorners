@@ -83,7 +83,7 @@ class HotCorner {
         bool triggeredHotCorner = false;
 
         while(true) {
-            if (hotCorner.Contains(new Point(Cursor.Position.X, Cursor.Position.Y)) == true) {
+            if (hotCorner.Contains(new Point(Cursor.Position.X, Cursor.Position.Y)) == true && isDown(Keys.LButton) == false) {
                 if (triggeredHotCorner == false) {
                     triggeredHotCorner = true;
                     SwitchTaskView();
@@ -97,6 +97,33 @@ class HotCorner {
 
 
     public void SwitchTaskView() {
-        System.Diagnostics.Process.Start("explorer.exe", "shell:::{3080F90E-D7AD-11D9-BD98-0000947B0257}");
+        // Method used previously (Opening Task View via Explorer). Sometimes it gets stuck:
+        // System.Diagnostics.Process.Start("explorer.exe", "shell:::{3080F90E-D7AD-11D9-BD98-0000947B0257}");
+        KeyDown(Keys.LWin);
+        KeyDown(Keys.Tab);
+        KeyUp(Keys.LWin);
+        KeyUp(Keys.Tab);
+    }
+
+    // Using `keybd_event` from user32.dll since `System.Windows.Forms.SendKeys.Send` does not support Win key.
+    // Emulating with CTRL+ESC, SendWait("^({ESC}{TAB})") or Send("^({ESC}{TAB}})") does not work
+    [DllImport("user32.dll")]
+    private static extern void keybd_event(byte bVk, byte bScan, int dwFlags, int dwExtraInfo);
+    private const int KEYEVENTF_EXTENDEDKEY = 1;
+    private const int KEYEVENTF_KEYUP = 2;
+    public static void KeyDown(Keys vKey) {
+        keybd_event((byte)vKey, 0, KEYEVENTF_EXTENDEDKEY, 0);
+    }
+    public static void KeyUp(Keys vKey) {
+        keybd_event((byte)vKey, 0, KEYEVENTF_EXTENDEDKEY | KEYEVENTF_KEYUP, 0);
+    }
+
+    // Used to detect if a Key button is pressed or not
+    // Used to detect if the mouse button is pressed while the cursor is at the corner of the screen.
+    // This may indicate that a drag-and-drop operation is in progress and therefore it is not necessary to activate the hotcorner
+    [DllImport("user32", CharSet = CharSet.Ansi, SetLastError = true)]
+    public static extern int GetAsyncKeyState(int vKey);
+    public static bool isDown(Keys button) {
+            return GetAsyncKeyState((int)button) > 1;
     }
 }
