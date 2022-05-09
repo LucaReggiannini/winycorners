@@ -1,7 +1,7 @@
 # WinYcorners
 Sets a hot-corner that shows the Task View on mouse hover. 
 
-This tool wants to imitate the hot corners of Gnome Desktop 40+.
+This tool wants to imitate the hot corners of Gnome Desktop 40+.\
 Gnome like hot corners for Windows.
 
 # How to compile
