@@ -16,7 +16,7 @@ Now you are ready to compile:
 ```
 git clone https://github.com/LucaReggiannini/winycorners.git
 cd winycorners
-C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe /r:"C:\Windows\Microsoft.NET\Framework64\v4.0.30319\WPF\WindowsBase.dll" /t:exe /out:winycorners.exe winycorners.cs
+C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe /r:"C:\Windows\Microsoft.NET\Framework64\v4.0.30319\WPF\WindowsBase.dll" /t:winexe /out:winycorners.exe winycorners.cs
 ```
 
 # Usage
