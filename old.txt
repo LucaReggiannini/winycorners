@@ -1,0 +1,37 @@
+/* Deprecated code to press keys Win+Tab to open the TaskView based on the foreground window
+
+using System;
+using System.Text;
+
+const string TASKVIEW_CLASS_NAME = "XamlExplorerHostIslandWindow";
+ 
+[DllImport("user32.dll")]
+static extern IntPtr GetForegroundWindow();
+[DllImport("user32.dll")]
+static extern int GetWindowText(IntPtr hWnd, StringBuilder lpWindowText, int count);
+[DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+static extern int GetClassName(IntPtr hWnd, StringBuilder lpClassName, int count);
+public Tuple<string, string> GetForegroundWindowInfo()
+{
+    String windowText = "";
+    String windowClass = "";
+    const int N = 256;
+    StringBuilder buffer1 = new StringBuilder(N);
+    StringBuilder buffer2 = new StringBuilder(N);
+    IntPtr handle_foregroundWindow = GetForegroundWindow();
+    if (GetWindowText(handle_foregroundWindow, buffer1, N) > 0) {
+        windowText = buffer1.ToString();
+    }
+    if (GetClassName(handle_foregroundWindow, buffer2, N) > 0) {
+        windowClass = buffer2.ToString();
+    }
+    return Tuple.Create(windowText, windowClass);
+}
+
+static void Main(string[] args) {
+    HTuple<string, string> foregroundWindowInfo = GetForegroundWindowInfo();
+    while(true) {
+        Console.WriteLine(foregroundWindowInfo.Item1 + " " + foregroundWindowInfo.Item2);
+    }   
+}
+    */
