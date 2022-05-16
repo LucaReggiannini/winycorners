@@ -8,39 +8,54 @@ Gnome like hot corners for Windows.
 Created by Luca Reggiannini. Original repo: https://github.com/LucaReggiannini/winycorners
 
 Search your C# compiler with `cd C:/ %% dir /S /B csc.exe`
-Compile & run with: cls && C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe /r:"C:\Windows\Microsoft.NET\Framework64\v4.0.30319\WPF\WindowsBase.dll" /t:winexe /out:winycorners.exe winycorners.cs %% winycorners.exe --top-left
+Compile & run with: 
+cls && taskkill /F /T /IM winycorners.exe & C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe /r:"C:\Windows\Microsoft.NET\Framework64\v4.0.30319\WPF\WindowsBase.dll" /t:winexe /out:winycorners.exe winycorners.cs && winycorners.exe --top-left
 */
 
-using System;                         // Tuples
-using System.Windows;                 // Rect, Point
-using System.Windows.Forms;           // System.Windows.Forms.Form, Screen.PrimaryScreen.Bounds, MessageBox.Show
-using System.Threading;               // Thread.Sleep
-using System.Runtime.InteropServices; //System.Diagnostics.Process.Start
+using System;                          // Tuples
+using System.Windows;                  // Rect, Point
+using System.Windows.Forms;            // System.Windows.Forms.Form, Screen.PrimaryScreen.Bounds, MessageBox.Show
+using System.Threading;                // Thread.Sleep
+using System.Runtime.InteropServices;  // System.Diagnostics.Process.Start
 
 
 
 class HotCornerForm : System.Windows.Forms.Form {
 
     
-    public HotCornerForm(string position) {
+    public HotCornerForm(string position, bool enhancedTaskView) {
+        /* Create an invisible Windows Form */
         this.FormBorderStyle = FormBorderStyle.None;
-        this.WindowState = FormWindowState.Minimized;
-        this.ShowInTaskbar = false;
+        this.WindowState     = FormWindowState.Minimized;
+        this.ShowInTaskbar   = false;
 
-        HotCorner hc = new HotCorner(position);
+        HotCorner hc = new HotCorner(position, enhancedTaskView);
     }
 
 
     static void Main(string[] args) {
-        if (args == null || args.Length == 0) {
+        
+        bool   enhancedTaskView = false;
+        string position         = "--top-left";
+
+        /* Parse arguments */
+        if (args == null || args.Length == 0)
             help();
-        } else {
-            if (args[0]=="--top-left" || args[0]=="--bottom-left" || args[0]=="--top-right" || args[0]=="--bottom-right") {
-                System.Windows.Forms.Application.Run(new HotCornerForm(args[0]));
-            } else {
-                help();
+        else {
+            for (int c = 0; c < args.Length; c++) {
+                if (args[c]=="--enhanced-task-view") {
+                    enhancedTaskView = true;
+                }
+                else if (args[c]=="--top-left" || args[c]=="--bottom-left" || args[0]=="--top-right" || args[0]=="--bottom-right") {
+                    position=args[c];
+                }
+                else 
+                    help();
             }
+
+            System.Windows.Forms.Application.Run(new HotCornerForm(position, enhancedTaskView));
         }
+            
     }
 
 
@@ -53,13 +68,20 @@ Sets a hot-corner that shows the Task View on mouse hover.
 This tool wants to imitate the hot corners of Gnome Desktop 40+.
 
 SYNOPSIS: 
-    winycorners [OPTIONS]
+    winycorners [OPTIONS] [POSITION]
 
 OPTIONS:
+    --enhanced-task-view
+        Hides taskbar and maximize the desktop working area.
+        Show the taskbar only when taskview is visible (like Gnome)
+
+POSITION:
     --top-left
     --top-right
     --bottom-left
     --bottom right
+
+    default position is top-left
                     ");
     }
 }
@@ -72,68 +94,150 @@ class HotCorner {
     const short HOT_CORNER_SIZE = 8;
     const short REFRESH_TIME    = 10;
 
-    
-    public HotCorner(string position) {
+    public HotCorner(string position, bool enhancedTaskView) {
 
-        Rect hotCorner = new Rect();
-        hotCorner.Size = new Size(HOT_CORNER_SIZE, HOT_CORNER_SIZE);
+        /* Defining hot corner size */
+        Size  s         = new Size(HOT_CORNER_SIZE, HOT_CORNER_SIZE);
+        Rect  hotCorner = new Rect(s);
 
-        // Set `hotCorner` upper-left point location based on `position`
-        if (position=="--top-left") {
+        /* Defining hot corner position (.Location is the upper-left point) */
+        if (position=="--top-left")
             hotCorner.Location = new Point(0, 0);
-        } else if (position=="--top-right") {
-            hotCorner.Location = new Point(SCREEN_WIDTH - HOT_CORNER_SIZE, 0);
-        } else if (position=="--bottom-left") {
-            hotCorner.Location = new Point(0, SCREEN_HEIGHT - HOT_CORNER_SIZE);
-        } else if (position=="--bottom-right") {
-            hotCorner.Location = new Point(SCREEN_WIDTH - HOT_CORNER_SIZE, SCREEN_HEIGHT - HOT_CORNER_SIZE);   
-        }
+        else if (position=="--top-right") 
+          hotCorner.Location = new Point(SCREEN_WIDTH - HOT_CORNER_SIZE, 0);
+        else if (position=="--bottom-left")
+          hotCorner.Location = new Point(0, SCREEN_HEIGHT - HOT_CORNER_SIZE);
+        else if (position=="--bottom-right")
+          hotCorner.Location = new Point(SCREEN_WIDTH - HOT_CORNER_SIZE, SCREEN_HEIGHT - HOT_CORNER_SIZE);   
+        
 
         Cursor c = new Cursor(Cursor.Current.Handle);
         bool triggeredHotCorner = false;
 
         while(true) {
-            if (hotCorner.Contains(new Point(Cursor.Position.X, Cursor.Position.Y)) == true && isDown(Keys.LButton) == false) {
+
+            /* Trigger hot corner based on the cursor position.
+            If the left mouse button is pressed the hot corner is not triggered: maybe a drag and drop operation is in progress */
+            if (hotCorner.Contains(new Point(Cursor.Position.X, Cursor.Position.Y))==true && isDown(Keys.LButton)==false) {
                 if (triggeredHotCorner == false) {
                     triggeredHotCorner = true;
                     SwitchTaskView();
-                } else { }
-            } else if (hotCorner.Contains(new Point(Cursor.Position.X, Cursor.Position.Y)) == false && triggeredHotCorner) {
+                }
+            }
+            else if (hotCorner.Contains(new Point(Cursor.Position.X, Cursor.Position.Y))==false && triggeredHotCorner) 
                 triggeredHotCorner = false;
+            
+            if (enhancedTaskView==true) {
+                /* Make sure that the desktop working area is always full size */
+                ExpandWorkingArea();
+
+                /* Display the taskbar only during the task view */
+                if (IsTaskViewVisible()==true)
+                    SetTaskbarVisible(true);
+                else
+                    SetTaskbarVisible(false);
             }
+
             Thread.Sleep(REFRESH_TIME);
-            }
+        }
     }
 
 
-    public void SwitchTaskView() {
-        // Method used previously (Opening Task View via Explorer). Sometimes it gets stuck:
-        // System.Diagnostics.Process.Start("explorer.exe", "shell:::{3080F90E-D7AD-11D9-BD98-0000947B0257}");
+    /* Code used to show the task view ______________________________________________________________________*/
+    
+    /* Code used to simulate a keypress.
+    Using "keybd_event" from user32.dll since "System.Windows.Forms.SendKeys.Send" does not support Win key.
+    Emulating with CTRL+ESC, SendWait("^({ESC}{TAB})") or Send("^({ESC}{TAB}})") does not work */
+    [DllImport("user32.dll")]
+    private static extern void keybd_event(byte bVk, byte bScan, int dwFlags, int dwExtraInfo);
+    private const int KEYEVENTF_EXTENDEDKEY = 0x0001;
+    private const int KEYEVENTF_KEYUP = 0x0002;
+    private static void KeyDown(Keys vKey) {
+        keybd_event((byte)vKey, 0, KEYEVENTF_EXTENDEDKEY, 0);
+    }
+    private static void KeyUp(Keys vKey) {
+        keybd_event((byte)vKey, 0, KEYEVENTF_EXTENDEDKEY | KEYEVENTF_KEYUP, 0);
+    }
+    private void SwitchTaskView() {
+        /* Press Win+Tab to open the task view */
         KeyDown(Keys.LWin);
         KeyDown(Keys.Tab);
         KeyUp(Keys.LWin);
         KeyUp(Keys.Tab);
     }
 
-    // Using `keybd_event` from user32.dll since `System.Windows.Forms.SendKeys.Send` does not support Win key.
-    // Emulating with CTRL+ESC, SendWait("^({ESC}{TAB})") or Send("^({ESC}{TAB}})") does not work
-    [DllImport("user32.dll")]
-    private static extern void keybd_event(byte bVk, byte bScan, int dwFlags, int dwExtraInfo);
-    private const int KEYEVENTF_EXTENDEDKEY = 1;
-    private const int KEYEVENTF_KEYUP = 2;
-    public static void KeyDown(Keys vKey) {
-        keybd_event((byte)vKey, 0, KEYEVENTF_EXTENDEDKEY, 0);
-    }
-    public static void KeyUp(Keys vKey) {
-        keybd_event((byte)vKey, 0, KEYEVENTF_EXTENDEDKEY | KEYEVENTF_KEYUP, 0);
-    }
-
-    // Used to detect if a Key button is pressed or not
-    // Used to detect if the mouse button is pressed while the cursor is at the corner of the screen.
-    // This may indicate that a drag-and-drop operation is in progress and therefore it is not necessary to activate the hotcorner
+    /* Code used to detect if a Keyboard or mouse button is pressed or not
+    If the mouse button is pressed while the cursor is at the corner of the screenmay indicate that a drag-and-drop 
+    operation is in progress and therefore it is not necessary to activate the hotcorner */
     [DllImport("user32", CharSet = CharSet.Ansi, SetLastError = true)]
-    public static extern int GetAsyncKeyState(int vKey);
-    public static bool isDown(Keys button) {
+    private static extern int GetAsyncKeyState(int vKey);
+    private static bool isDown(Keys button) {
             return GetAsyncKeyState((int)button) > 1;
     }
+    /*_______________________________________________________________________________________________________*/
+
+
+    /* Code used to resize the desktop working area__________________________________________________________
+    The working area is the desktop area of the display, excluding taskbars, docked windows, and docked tool 
+    bars. */
+
+    /* More infos on this struct:
+    https://docs.microsoft.com/en-us/windows/win32/api/windef/ns-windef-rect
+    https://docs.microsoft.com/it-it/dotnet/api/system.runtime.interopservices.layoutkind?view=net-6.0 
+    Needed by "systemparametersinfoa" while working with "SPI_SETWORKAREA":
+    https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-systemparametersinfoa*/
+    [StructLayout(LayoutKind.Sequential)] 
+    struct RECT {
+        public Int32 left;
+        public Int32 top;   
+        public Int32 right;
+        public Int32 bottom;
+    }
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool SystemParametersInfo(int uiAction, int uiParam, ref RECT pvParam, int fWinIni);
+    const int SPI_SETWORKAREA = 0x002F;
+    const int SPIF_UPDATEINIFILE = 0x0001; /* Source: https://www.pinvoke.net/default.aspx/Enums/SPIF.html */
+    private void ExpandWorkingArea() {
+        RECT workingArea;
+        workingArea.left = 0;
+        workingArea.top = 0;
+        workingArea.right = SCREEN_WIDTH;
+        workingArea.bottom = SCREEN_HEIGHT;
+        SystemParametersInfo(SPI_SETWORKAREA, 0, ref workingArea, SPIF_UPDATEINIFILE);    
+    }
+    /*_______________________________________________________________________________________________________*/
+
+
+    /* Code used to show/hide the taskbar____________________________________________________________________*/
+    [DllImport("user32.dll", CharSet = CharSet.Auto)]
+    private static extern IntPtr FindWindow(string strClassName, string strWindowName);
+    /* https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setwindowpos */
+    [DllImport("user32.dll", EntryPoint = "SetWindowPos")]
+    private static extern IntPtr SetWindowPos(IntPtr hWnd, int hWndInsertAfter, int x, int Y, int cx, int cy, uint wFlags);
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    static extern bool IsWindowVisible(IntPtr hWnd);
+    const uint SWP_HIDEWINDOW = 0x0080;
+    const uint SWP_SHOWWINDOW = 0x0040;
+    const string TASKBAR_CLASSNAME_LEGACY = "System_TrayWnd";
+    const string TASKBAR_CLASSNAME        = "Shell_TrayWnd";
+    private void SetTaskbarVisible(bool visible) {
+        IntPtr hwnd = FindWindow(TASKBAR_CLASSNAME_LEGACY, null);
+        if (hwnd == IntPtr.Zero) 
+            hwnd = FindWindow(TASKBAR_CLASSNAME, null);
+        if (visible) 
+            SetWindowPos(hwnd,0,0,0,0,0,SWP_SHOWWINDOW);
+        else 
+            SetWindowPos(hwnd,0,0,0,0,0,SWP_HIDEWINDOW);       
+    }
+    /*_______________________________________________________________________________________________________*/
+
+
+    /* Code used to check if taskview is visible____________________________________________________________ */
+    private bool IsTaskViewVisible() {
+        IntPtr hwnd = FindWindow("XamlExplorerHostIslandWindow", null);
+        return IsWindowVisible(hwnd);
+    }
+    /*_______________________________________________________________________________________________________*/
 }
