@@ -23,11 +23,18 @@ C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe /r:"C:\Windows\Microsoft
 # Usage
 ```
 SYNOPSIS: 
-    winycorners [OPTIONS]
+    winycorners [OPTIONS] [POSITION]
 
 OPTIONS:
+    --enhanced-task-view
+        Hides taskbar and maximize the desktop working area.
+        Show the taskbar only when taskview is visible (like Gnome)
+
+POSITION:
     --top-left
     --top-right
     --bottom-left
     --bottom right
+
+    default position is top-left
 ```
