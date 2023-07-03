@@ -120,6 +120,12 @@ class HotCorner {
                 /* Trigger hot corner based on the cursor position.
                 If the left mouse button is pressed the hot corner is not triggered: maybe a drag and drop operation is in progress */
                 if (hotCorner.Contains(new Point(Cursor.Position.X, Cursor.Position.Y))==true && isDown(Keys.LButton)==false) {
+		            /* FIX for "--enhanced-task-view" on Windows 11:
+                    Seems like Windows 11 can't modify Taskbar visibility when your are already in Task View
+                    so set SetTaskbarVisible(true) by default when the hot corner is triggered then wait some 
+                    time (see "Thread.Sleep(300);" later) and finally check if Task View is visible or not in
+                    order to update the taskbar visibility */
+                    if (enhancedTaskView==true) { SetTaskbarVisible(true); }
                     if (triggeredHotCorner == false) {
                         triggeredHotCorner = true;
                         SwitchTaskView();
@@ -127,7 +133,7 @@ class HotCorner {
                 }
                 else if (hotCorner.Contains(new Point(Cursor.Position.X, Cursor.Position.Y))==false && triggeredHotCorner) 
                     triggeredHotCorner = false;
-                
+                Thread.Sleep(300);
                 if (enhancedTaskView==true) {
                     /* Make sure that the desktop working area is always full size */
                     ExpandWorkingArea();
