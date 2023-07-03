@@ -48,3 +48,17 @@ POSITION:
 
     default position is top-left
 ```
+
+# Update: Fghelper
+Fghelper is a small tool that logs basic information about the current foreground window.
+
+It is useful to debug WinYcorners problems in case class or window names for desktop elements are changed in new versions of Windows.
+
+The procedure to compile fghelper is the same as WinYcorners. Example:
+```
+C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe /out:fghelper.exe fghelper.cs
+```
+
+You'll just need to start the tool and select the window of which you want to obtain the information. The information will be written to the terminal window. For example, to get the details of the Task View it will be enough to press the `Win+Tab` keys and the information will be shown in the output. Example:
+
+![fghelper.png](fghelper.png)
