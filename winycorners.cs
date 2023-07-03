@@ -23,13 +23,13 @@ using System.Text;                     // StringBuilder
 class HotCornerForm : System.Windows.Forms.Form {
 
     
-    public HotCornerForm(string position, bool enhancedTaskView) {
+    public HotCornerForm(string position, bool enhancedTaskView, short cornerSize) {
         /* Create an invisible Windows Form */
         this.FormBorderStyle = FormBorderStyle.None;
         this.WindowState     = FormWindowState.Minimized;
         this.ShowInTaskbar   = false;
 
-        HotCorner hc = new HotCorner(position, enhancedTaskView);
+        HotCorner hc = new HotCorner(position, enhancedTaskView, cornerSize);
     }
 
 
@@ -37,6 +37,7 @@ class HotCornerForm : System.Windows.Forms.Form {
         
         bool   enhancedTaskView = false;
         string position         = "--top-left";
+	short  cornerSize       = 8;
 
         /* Parse arguments */
         if (args == null || args.Length == 0)
@@ -46,14 +47,22 @@ class HotCornerForm : System.Windows.Forms.Form {
                 if (args[c]=="--enhanced-task-view") {
                     enhancedTaskView = true;
                 }
-                else if (args[c]=="--top-left" || args[c]=="--bottom-left" || args[0]=="--top-right" || args[0]=="--bottom-right") {
+                else if (args[c]=="--top-left" || args[c]=="--bottom-left" || args[c]=="--top-right" || args[c]=="--bottom-right") {
                     position=args[c];
+                }
+                else if (args[c]=="--corner-size") {
+		    try {
+                        cornerSize=short.Parse(args[c+1]);
+			c=c+1;
+                    } catch {
+                        help();
+                    }
                 }
                 else 
                     help();
             }
 
-            System.Windows.Forms.Application.Run(new HotCornerForm(position, enhancedTaskView));
+            System.Windows.Forms.Application.Run(new HotCornerForm(position, enhancedTaskView, cornerSize));
         }
             
     }
@@ -61,7 +70,8 @@ class HotCornerForm : System.Windows.Forms.Form {
 
     static void help() {
         MessageBox.Show(@"
-WinYcorners
+WinYcorners v1.5.0
+https://github.com/LucaReggiannini/winycorners/
 
 Sets a hot-corner that shows the Task View on mouse hover.
 
@@ -74,6 +84,9 @@ OPTIONS:
     --enhanced-task-view
         Hides taskbar and maximize the desktop working area.
         Show the taskbar only when taskview is visible (like Gnome)
+
+    --corner-size
+        The size of the hot corner in pixels. Default value is 8px
 
 POSITION:
     --top-left
@@ -89,12 +102,12 @@ POSITION:
 
 class HotCorner {
 
-          int   SCREEN_HEIGHT   = Screen.PrimaryScreen.Bounds.Height;
-          int   SCREEN_WIDTH    = Screen.PrimaryScreen.Bounds.Width;
-    const short HOT_CORNER_SIZE = 8;
+    int   SCREEN_HEIGHT         = Screen.PrimaryScreen.Bounds.Height;
+    int   SCREEN_WIDTH          = Screen.PrimaryScreen.Bounds.Width;
+    // const short HOT_CORNER_SIZE = 8; // Corner size is now passed as argument
     const short REFRESH_TIME    = 10;
 
-    public HotCorner(string position, bool enhancedTaskView) {
+    public HotCorner(string position, bool enhancedTaskView, short HOT_CORNER_SIZE) {
 
         /* Defining hot corner size */
         Size  s         = new Size(HOT_CORNER_SIZE, HOT_CORNER_SIZE);
@@ -116,23 +129,23 @@ class HotCorner {
 
         while(true) {
 
-            if (ForegroundDetect.CheckFullScreen()==true) {
+            if (ForegroundDetect.CheckFullScreen()==false || IsTaskViewVisible()==true) { 
                 /* Trigger hot corner based on the cursor position.
-                If the left mouse button is pressed the hot corner is not triggered: maybe a drag and drop operation is in progress */
+                If the left mouse button is pressed the hot corner is not triggered: maybe a drag and drop operation is in progress.
+
+                Note: hot corner is not triggered if there is a full screen application.
+                Windows 11 task view is considered a full screen application so is white
+                listed using "|| IsTaskViewVisible()==true" in the conditional block. */
                 if (hotCorner.Contains(new Point(Cursor.Position.X, Cursor.Position.Y))==true && isDown(Keys.LButton)==false) {
-		            /* FIX for "--enhanced-task-view" on Windows 11:
-                    Seems like Windows 11 can't modify Taskbar visibility when your are already in Task View
-                    so set SetTaskbarVisible(true) by default when the hot corner is triggered then wait some 
-                    time (see "Thread.Sleep(300);" later) and finally check if Task View is visible or not in
-                    order to update the taskbar visibility */
-                    if (enhancedTaskView==true) { SetTaskbarVisible(true); }
+		    SetTaskbarVisible(true);
                     if (triggeredHotCorner == false) {
                         triggeredHotCorner = true;
                         SwitchTaskView();
                     }
                 }
-                else if (hotCorner.Contains(new Point(Cursor.Position.X, Cursor.Position.Y))==false && triggeredHotCorner) 
+                else if (hotCorner.Contains(new Point(Cursor.Position.X, Cursor.Position.Y))==false && triggeredHotCorner) {
                     triggeredHotCorner = false;
+		}
                 Thread.Sleep(300);
                 if (enhancedTaskView==true) {
                     /* Make sure that the desktop working area is always full size */
@@ -304,7 +317,7 @@ class ForegroundDetect {
             RECT appBounds;
             GetWindowRect(hWnd, out appBounds);
             var screenBounds = Screen.FromHandle(hWnd).Bounds;
-            return !((appBounds.Bottom - appBounds.Top) == screenBounds.Height && (appBounds.Right - appBounds.Left) == screenBounds.Width);
+            return (appBounds.Bottom - appBounds.Top) == screenBounds.Height && (appBounds.Right - appBounds.Left) == screenBounds.Width;
         }
 
         [StructLayout(LayoutKind.Sequential)]
