@@ -22,6 +22,13 @@ C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe /r:"C:\Windows\Microsoft
 
 # Usage
 ```
+WinYcorners v1.5.0
+https://github.com/LucaReggiannini/winycorners/
+
+Sets a hot-corner that shows the Task View on mouse hover.
+
+This tool wants to imitate the hot corners of Gnome Desktop 40+.
+
 SYNOPSIS: 
     winycorners [OPTIONS] [POSITION]
 
@@ -29,6 +36,9 @@ OPTIONS:
     --enhanced-task-view
         Hides taskbar and maximize the desktop working area.
         Show the taskbar only when taskview is visible (like Gnome)
+
+    --corner-size
+        The size of the hot corner in pixels. Default value is 8px
 
 POSITION:
     --top-left
