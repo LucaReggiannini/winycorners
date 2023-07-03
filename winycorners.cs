@@ -17,7 +17,7 @@ using System.Windows;                  // Rect, Point
 using System.Windows.Forms;            // System.Windows.Forms.Form, Screen.PrimaryScreen.Bounds, MessageBox.Show
 using System.Threading;                // Thread.Sleep
 using System.Runtime.InteropServices;  // System.Diagnostics.Process.Start
-
+using System.Text;                     // StringBuilder
 
 
 class HotCornerForm : System.Windows.Forms.Form {
@@ -116,29 +116,32 @@ class HotCorner {
 
         while(true) {
 
-            /* Trigger hot corner based on the cursor position.
-            If the left mouse button is pressed the hot corner is not triggered: maybe a drag and drop operation is in progress */
-            if (hotCorner.Contains(new Point(Cursor.Position.X, Cursor.Position.Y))==true && isDown(Keys.LButton)==false) {
-                if (triggeredHotCorner == false) {
-                    triggeredHotCorner = true;
-                    SwitchTaskView();
+            if (ForegroundDetect.CheckFullScreen()==true) {
+                /* Trigger hot corner based on the cursor position.
+                If the left mouse button is pressed the hot corner is not triggered: maybe a drag and drop operation is in progress */
+                if (hotCorner.Contains(new Point(Cursor.Position.X, Cursor.Position.Y))==true && isDown(Keys.LButton)==false) {
+                    if (triggeredHotCorner == false) {
+                        triggeredHotCorner = true;
+                        SwitchTaskView();
+                    }
                 }
-            }
-            else if (hotCorner.Contains(new Point(Cursor.Position.X, Cursor.Position.Y))==false && triggeredHotCorner) 
-                triggeredHotCorner = false;
-            
-            if (enhancedTaskView==true) {
-                /* Make sure that the desktop working area is always full size */
-                ExpandWorkingArea();
+                else if (hotCorner.Contains(new Point(Cursor.Position.X, Cursor.Position.Y))==false && triggeredHotCorner) 
+                    triggeredHotCorner = false;
+                
+                if (enhancedTaskView==true) {
+                    /* Make sure that the desktop working area is always full size */
+                    ExpandWorkingArea();
 
-                /* Display the taskbar only during the task view */
-                if (IsTaskViewVisible()==true)
-                    SetTaskbarVisible(true);
-                else
-                    SetTaskbarVisible(false);
+                    /* Display the taskbar only during the task view */
+                    if (IsTaskViewVisible()==true || IsTaskViewVisible_win10()==true)
+                        SetTaskbarVisible(true);
+                    else
+                        SetTaskbarVisible(false);
+                }
+
+                Thread.Sleep(REFRESH_TIME);
             }
 
-            Thread.Sleep(REFRESH_TIME);
         }
     }
 
@@ -236,8 +239,74 @@ class HotCorner {
 
     /* Code used to check if taskview is visible____________________________________________________________ */
     private bool IsTaskViewVisible() {
+         // Check for Windows 11
         IntPtr hwnd = FindWindow("XamlExplorerHostIslandWindow", null);
         return IsWindowVisible(hwnd);
     }
     /*_______________________________________________________________________________________________________*/
+
+
+    /* Code used to check if taskview is visible (Windows 10 compatible)____________________________________ */
+    [DllImport("user32.dll")]
+    private static extern IntPtr GetForegroundWindow();
+    [DllImport("user32.dll")]
+    static extern int GetWindowText(IntPtr hWnd, StringBuilder text, int count);
+    private bool IsTaskViewVisible_win10() {
+       
+        var hWnd = GetForegroundWindow();
+        const int nChars = 256;
+        StringBuilder Buff = new StringBuilder(nChars);
+        String windowsText = "";
+        if (GetWindowText(hWnd, Buff, nChars) > 0)
+        {
+            windowsText = Buff.ToString();
+        }
+        if (windowsText=="Task View") {
+            return true;
+        } else {
+            return false;
+        }
+    }
+    /*_______________________________________________________________________________________________________*/
+
 }
+
+class ForegroundDetect { 
+
+        [DllImport("user32.dll")]
+        private static extern IntPtr GetForegroundWindow();
+        [DllImport("user32.dll")]
+        private static extern IntPtr GetDesktopWindow();
+        [DllImport("user32.dll")]
+        private static extern IntPtr GetShellWindow();
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern int GetWindowRect(IntPtr hwnd, out RECT lpRect);
+
+        public static bool CheckFullScreen() {
+            
+            /* 
+            Return True if there is a fullscreen application 
+            Thanks to/original code: https://github.com/RobertSmits/Windows-10-HotCorners/blob/master/Windows10.HotCorners/Business/ForegroundDetector.cs    
+            */
+        
+            var desktopHandle = GetDesktopWindow();
+            var shellHandle = GetShellWindow();
+            var hWnd = GetForegroundWindow();
+
+            if (hWnd.Equals(IntPtr.Zero)) return false;
+            if (hWnd.Equals(desktopHandle) || hWnd.Equals(shellHandle)) return false;
+            RECT appBounds;
+            GetWindowRect(hWnd, out appBounds);
+            var screenBounds = Screen.FromHandle(hWnd).Bounds;
+            return !((appBounds.Bottom - appBounds.Top) == screenBounds.Height && (appBounds.Right - appBounds.Left) == screenBounds.Width);
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct RECT
+        {
+            public int Left;        // x position of upper-left corner
+            public int Top;         // y position of upper-left corner
+            public int Right;       // x position of lower-right corner
+            public int Bottom;      // y position of lower-right corner
+        }
+    }
