@@ -18,7 +18,7 @@ using System.Windows.Forms;            // System.Windows.Forms.Form, Screen.Prim
 using System.Threading;                // Thread.Sleep
 using System.Runtime.InteropServices;  // System.Diagnostics.Process.Start
 using System.Text;                     // StringBuilder
-
+using System.Diagnostics;              // Process
 
 class HotCornerForm : System.Windows.Forms.Form {
    
@@ -38,7 +38,9 @@ class HotCornerForm : System.Windows.Forms.Form {
 
 
     static void Main(string[] args) {
-        
+
+        KillExistingProcesses();
+
         bool   enhancedTaskView      = false;
         string position              = "--top-left";
         short  hotCornerSize         = 8;
@@ -87,9 +89,27 @@ class HotCornerForm : System.Windows.Forms.Form {
                     updateTime,
                     enhancedTaskViewDelay));
         }
-            
     }
 
+    private static void KillExistingProcesses() {
+        MessageBoxButtons buttons = MessageBoxButtons.YesNo;
+        
+        Process currentProcess = Process.GetCurrentProcess();
+        Process[] processes = Process.GetProcessesByName(Process.GetCurrentProcess().ProcessName);
+        foreach (var process in processes) {
+            if (process.Id != currentProcess.Id) {
+                DialogResult result = MessageBox.Show(
+                    "Another WinYcorners process was found (PID:" + process.Id + "). " +
+                    "Do you want to terminate it?", 
+                    "WinYcorners", 
+                    buttons,
+                    MessageBoxIcon.Warning);
+
+                if (result == DialogResult.Yes)
+                    process.Kill();
+            }
+        }
+    }
 
     static void help() {
         MessageBox.Show(@"
