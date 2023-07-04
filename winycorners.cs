@@ -113,7 +113,7 @@ class HotCornerForm : System.Windows.Forms.Form {
 
     static void help() {
         MessageBox.Show(@"
-WinYcorners v1.5.0
+WinYcorners v1.6.0
 https://github.com/LucaReggiannini/winycorners/
 
 Sets a hot-corner that shows the Task View on mouse hover.
