@@ -39,8 +39,6 @@ class HotCornerForm : System.Windows.Forms.Form {
 
     static void Main(string[] args) {
 
-        KillExistingProcesses();
-
         bool   enhancedTaskView      = false;
         string position              = "--top-left";
         short  hotCornerSize         = 8;
@@ -80,6 +78,8 @@ class HotCornerForm : System.Windows.Forms.Form {
                 } else 
                     help();
             }
+
+            KillExistingProcesses();
 
             System.Windows.Forms.Application.Run(
                 new HotCornerForm(
@@ -165,6 +165,9 @@ OPTIONS:
         animations are not enabled on your system.
         Increasing the value may be useful for slower systems
 ");
+
+    System.Environment.Exit(0);
+
     }
 }
 
