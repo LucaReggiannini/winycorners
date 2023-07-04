@@ -39,8 +39,6 @@ class HotCornerForm : System.Windows.Forms.Form {
 
     static void Main(string[] args) {
 
-        KillExistingProcesses();
-
         bool   enhancedTaskView      = false;
         string position              = "--top-left";
         short  hotCornerSize         = 8;
@@ -81,6 +79,8 @@ class HotCornerForm : System.Windows.Forms.Form {
                     help();
             }
 
+            KillExistingProcesses();
+
             System.Windows.Forms.Application.Run(
                 new HotCornerForm(
                     position,
@@ -113,7 +113,7 @@ class HotCornerForm : System.Windows.Forms.Form {
 
     static void help() {
         MessageBox.Show(@"
-WinYcorners v1.5.0
+WinYcorners v1.7.0
 https://github.com/LucaReggiannini/winycorners/
 
 Sets a hot-corner that shows the Task View on mouse hover.
@@ -165,6 +165,9 @@ OPTIONS:
         animations are not enabled on your system.
         Increasing the value may be useful for slower systems
 ");
+
+    System.Environment.Exit(0);
+
     }
 }
 
@@ -386,25 +389,30 @@ class HotCorner {
 
     }
 
-
-    /*
-    [DllImport("user32.dll")]
-    private static extern IntPtr GetForegroundWindow(); Aldready declared */
+    /* [DllImport("user32.dll")]
+    private static extern IntPtr GetForegroundWindow(); // Already declared */
+    [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+    private static extern int GetClassName(IntPtr hWnd, StringBuilder lpClassName, int nMaxCount);
     [DllImport("user32.dll")]
     static extern int GetWindowText(IntPtr hWnd, StringBuilder text, int count);
 
     private bool IsTaskViewVisible() {
-    
-        var           hWnd        = GetForegroundWindow();
-        const int     N_CHARS     = 256;
-        StringBuilder buffer      = new StringBuilder(N_CHARS);
-        String        windowsText = "";
 
-        if (GetWindowText(hWnd, buffer, N_CHARS) > 0)
-            windowsText = buffer.ToString();
-        if (windowsText=="Task View") 
+        /* Get window Class Name */
+        const int N_CHARS         = 256;
+        string    windowClassName = "";
+        var       hWnd            = GetForegroundWindow();
+
+        StringBuilder sbWindowClassName = new StringBuilder(N_CHARS);
+        GetClassName(hWnd, sbWindowClassName, sbWindowClassName.Capacity);
+        windowClassName = sbWindowClassName.ToString();
+
+        IntPtr xamlExplorerHostIslandWindow = FindWindow("XamlExplorerHostIslandWindow", null); // Windows 11
+        IntPtr windowsUICoreCoreWindow      = FindWindow("Windows.UI.Core.CoreWindow"  , null); // Windows 10  
+
+        if (windowClassName=="XamlExplorerHostIslandWindow" || windowClassName=="Windows.UI.Core.CoreWindow")
             return true;
-        else
+        else 
             return false;
     }
 }

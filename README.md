@@ -22,7 +22,7 @@ C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe /r:"C:\Windows\Microsoft
 
 # Usage
 ```
-WinYcorners v1.5.0
+WinYcorners v1.7.0
 https://github.com/LucaReggiannini/winycorners/
 
 Sets a hot-corner that shows the Task View on mouse hover.
@@ -30,15 +30,7 @@ Sets a hot-corner that shows the Task View on mouse hover.
 This tool wants to imitate the hot corners of Gnome Desktop 40+.
 
 SYNOPSIS: 
-    winycorners [OPTIONS] [POSITION]
-
-OPTIONS:
-    --enhanced-task-view
-        Hides taskbar and maximize the desktop working area.
-        Show the taskbar only when taskview is visible (like Gnome)
-
-    --corner-size
-        The size of the hot corner in pixels. Default value is 8px
+    winycorners [POSITION] [OPTIONS]
 
 POSITION:
     --top-left
@@ -47,6 +39,41 @@ POSITION:
     --bottom right
 
     default position is top-left
+
+OPTIONS:
+    --corner-size <pixels>
+        The  size of the hot corner in pixels.  Default value is 8px
+
+    --update-time <milliseconds>
+        Determines  every how many milliseconds  the position of the
+        Windows cursor is checked (in order to trigger a hot corner).
+        The default value is 100 milliseconds. Decreasing this value
+        can increase the responsiveness of WinYconer but can lead to
+        performance problems on the system
+
+    --enhanced-task-view
+        Hides Taskbar and maximize the desktop working area.
+        Show the Taskbar only when Task View is visible (like Gnome)
+
+    --enhanced-task-view-delay <milliseconds>
+        In  Windows 11  the  Taskbar  visibility  can't  be  changed
+        while the Task View is active.  For Enhanced Task View  mode
+        to  work  properly, the Taskbar  is made visible immediately
+        after triggering the hot corner. 
+        Every N milliseconds it is checked if the task view is still
+        active: if it is not, the task bar is made invisible  again.
+        The '--enhanced-task-view-delay'  option  allows  you to set
+        the  number  of   milliseconds  with  which  this  check  is
+        performed. The default value is 150 milliseconds (this value
+        is  based  on the time it takes  the Task View  animation to
+        finish).
+        Decreasing  this value  can  increase  the responsiveness of
+        WinYconers in  Enhanced  Task  View  mode,  but  can lead to
+        problems in properly displaying the Taskbar.
+        Decreasing   the   value  is  recommended  only  if  Windows
+        animations are not enabled on your system.
+        Increasing the value may be useful for slower systems
+
 ```
 
 # Update: Fghelper
