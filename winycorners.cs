@@ -146,16 +146,19 @@ class HotCorner {
                 else if (hotCorner.Contains(new Point(Cursor.Position.X, Cursor.Position.Y))==false && triggeredHotCorner) {
                     triggeredHotCorner = false;
 		}
-                Thread.Sleep(300);
+                
                 if (enhancedTaskView==true) {
-                    /* Make sure that the desktop working area is always full size */
-                    ExpandWorkingArea();
+		    /* Wait for Task View animations to terminate to determine if it is visible or not*/
+		    Thread.Sleep(300);
 
                     /* Display the taskbar only during the task view */
-                    if (IsTaskViewVisible()==true || IsTaskViewVisible_win10()==true)
+                    if (IsTaskViewVisible()==true)
                         SetTaskbarVisible(true);
                     else
                         SetTaskbarVisible(false);
+
+		    /* Make sure that the desktop working area is always full size */
+                    ExpandWorkingArea();
                 }
 
                 Thread.Sleep(REFRESH_TIME);
@@ -257,26 +260,17 @@ class HotCorner {
 
 
     /* Code used to check if taskview is visible____________________________________________________________ */
-    private bool IsTaskViewVisible() {
-         // Check for Windows 11
-        IntPtr hwnd = FindWindow("XamlExplorerHostIslandWindow", null);
-        return IsWindowVisible(hwnd);
-    }
-    /*_______________________________________________________________________________________________________*/
-
-
-    /* Code used to check if taskview is visible (Windows 10 compatible)____________________________________ */
     [DllImport("user32.dll")]
     private static extern IntPtr GetForegroundWindow();
     [DllImport("user32.dll")]
     static extern int GetWindowText(IntPtr hWnd, StringBuilder text, int count);
-    private bool IsTaskViewVisible_win10() {
+    private bool IsTaskViewVisible() {
        
         var hWnd = GetForegroundWindow();
-        const int nChars = 256;
-        StringBuilder Buff = new StringBuilder(nChars);
+        const int N_CHARS = 256;
+        StringBuilder Buff = new StringBuilder(N_CHARS);
         String windowsText = "";
-        if (GetWindowText(hWnd, Buff, nChars) > 0)
+        if (GetWindowText(hWnd, Buff, N_CHARS) > 0)
         {
             windowsText = Buff.ToString();
         }
